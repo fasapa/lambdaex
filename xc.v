@@ -677,6 +677,8 @@ Proof.
   apply~ subst_preserve_lab_term; unpack_union; apply~ fv_notin_open.
 Qed.
 
+Hint Resolve lab_body_open_lab_term.
+
 (******************************************************************)
 (** XC Function *)
 (******************************************************************)
@@ -814,15 +816,30 @@ Proof.
     + simpl. case_var. case_var. auto.
 Qed.
 
+Lemma xc_rename : forall t (x y: var), 
+    lab_term t -> y \notin fv t -> xc([x ~> y]t) = [x ~> y](xc t).
+Proof. Admitted.
+
+Lemma xc_close_rename: forall t (x y: var),
+    x \notin fv t -> y \notin fv t -> lab_body t -> close (xc (t^x)) x = close (xc (t^y)) y.
+Proof.
+  intros; destruct (x == y); subst~.
+  rewrite~ (@subst_intro y).
+  rewrite~ xc_rename.
+  rewrite~ close_var_rename.
+  apply~ xc_fv.
+Qed.
+
 Lemma xc_close: forall t m (x:var), lab_body t -> x \notin fv t -> (close (xc(t^x)) x)^^m = [x ~> m]xc(t^x).
 Proof.
   intros; rewrite <- subst_as_close_open;
     [reflexivity | apply xc_lab_term_term; apply lab_body_open_lab_term; auto].
 Qed.
 
-Lemma xc_correct : forall m n: pterm,
-    let x := var_gen (fv m) in
-    lab_body m -> term n -> xc(m [[n]]) = [x ~> n]xc(m^x).
+Lemma xc_correct : forall (m n: pterm) (x: var),
+    x \notin fv m -> lab_body m -> term n -> xc(m [[n]]) = [x ~> n]xc(m^x).
 Proof.
-  intros; rewrite xc_equation; name_var_gen z; rewrite xc_close; try apply notin_var_gen; auto.
+  intros; rewrite xc_equation; name_var_gen z; rewrite (xc_close_rename _ z x); try rewrite xc_close;
+    try apply notin_var_gen; auto.
 Qed.
+
