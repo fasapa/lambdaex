@@ -47,7 +47,7 @@ Inductive ESlab_contextual_closure (Red : pterm -> pterm -> Prop) : pterm -> pte
                                       ESlab_contextual_closure Red  (pterm_sub t u) (pterm_sub t' u)
 | ESlab_subst_right : forall t u u', ESlab_contextual_closure Red u u' -> 
 	  	                     ESlab_contextual_closure Red  (pterm_sub t u) (pterm_sub t u')
-| ESlab_lsubst_left : forall t t' u L, (forall x, x \notin L -> ESlab_contextual_closure Red (t^x) (t'^x)) -> ESlab_contextual_closure Red  (pterm_sub t u) (pterm_sub t' u)
+| ESlab_lsubst_left : forall t t' u L, (forall x, x \notin L -> ESlab_contextual_closure Red (t^x) (t'^x)) -> ESlab_contextual_closure Red  (pterm_sub' t u) (pterm_sub' t' u)
 | ESlab_lsubst_right : forall t u u', ESlab_contextual_closure Red u u' -> 
 	  	                      ESlab_contextual_closure Red  (pterm_sub' t u) (pterm_sub' t u').
 

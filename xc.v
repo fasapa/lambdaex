@@ -176,7 +176,7 @@ Notation "t ->_Bxc u" := (ES_contextual_closure sys_Bx t u) (at level 66).
 Lemma subst_preserve_body :
   forall t (x z : var), body t -> body ([z ~> x] t).
 Proof.
-  intros; unfold body in *; unpack; exists_fresh_gen; rewrite~ subst_open_var.
+  intros; unfold body in *; unpack; exists_fresh_gen. rewrite~ subst_open_var.
 Qed.
 
 Lemma subst_eq :
@@ -748,7 +748,6 @@ Tactic Notation "name_var_gen" ident(x) :=
   | H: context [var_gen ?L] |- _ => sets x: (var_gen L)
   end.
 
-
 Lemma trm_size_rename : forall (x y : var) t,
   pterm_size ([x ~> y]t) = pterm_size t.
 Proof.
@@ -801,7 +800,7 @@ Proof.
       * reflexivity.
       * apply~ lab_body_open_lab_term. apply var_gen_spec.
       * apply~ fv_notin_open.
-Qed.  
+Qed.
 
 Lemma subst_close :
   forall t u x y,
@@ -816,30 +815,289 @@ Proof.
     + simpl. case_var. case_var. auto.
 Qed.
 
-Lemma xc_rename : forall t (x y: var), 
+Lemma subst_preserve_lab_body: forall t (x z : var), x \notin fv t -> lab_body t -> lab_body ([z ~> x]t).
+Proof.
+  intros; unfold lab_body in *; unpack; exists_fresh_gen; rewrite~ subst_open_var;
+    apply~ subst_preserve_lab_term; unpack_union; apply~ fv_notin_open.
+Qed.
+
+Lemma xc_var_comm : forall t (x y: var),
     lab_term t -> y \notin fv t -> xc([x ~> y]t) = [x ~> y](xc t).
-Proof. Admitted.
+Proof.
+      Lemma TMP:
+      forall t : pterm,
+        (forall (t2 : pterm) (x : VarSet.elt),
+            x \notin fv t2 ->
+            pterm_size t2 = pterm_size t ->
+            lab_term (t2 ^ x) ->
+            forall x0 y : var, y \notin fv (t2 ^ x) -> xc ([x0 ~> y]t2 ^ x) = ([x0 ~> y]xc (t2 ^ x))) ->
+        lab_body t ->
+        forall x y : var,
+          y \notin fv t ->
+          close (xc ({0 ~> var_gen (fv ([x ~> y]t))}([x ~> y]t))) (var_gen (fv ([x ~> y]t))) =
+          ([x ~> y]close (xc ({0 ~> var_gen (fv t)}t)) (var_gen (fv t))).
+    Proof.
+      intros t H0 H x y H1; name_var_gen z. name_var_gen z'.
+      sets ta: ([x ~> y]t); pick_fresh a; unpack_union.
+      lets HH: subst_intro; unfold open in HH; rewrite~ (@HH a).
+      lets IH1: H0 ta a a z ___.
+      + auto.
+      + subst ta; rewrite trm_size_rename; auto.
+      + subst ta; apply~ lab_body_open_lab_term; apply subst_preserve_lab_body; auto.
+      + subst z ta; apply notin_singleton in U9; apply VarSet.Raw.L.MO.OrderTac.neq_sym in U9;
+          apply (@fv_notin_open ([x ~> y]t) (var_gen (fv ([x ~> y]t))) a U9); auto.
+      + unfold open in *; rewrite IH1; clear IH1; rewrite~ close_var_rename.
+        * rewrite~ (@HH a t); subst ta.
+          lets HHH: subst_open_var; unfold open in *; rewrite~ HHH.
+          rewrite~ H0. rewrite~ H0. rewrite <- subst_close. fequal. rewrite~ close_var_rename.
+          apply xc_fv.
+          apply~ lab_body_open_lab_term; apply~ lab_term_abs_to_lab_body.
+          apply fv_notin_open. apply~ VarSet.Raw.L.MO.OrderTac.neq_sym. apply var_gen_spec.
+          auto. auto.
+          apply~ lab_body_open_lab_term; apply~ lab_term_abs_to_lab_body.
+          apply fv_notin_open. apply~ VarSet.Raw.L.MO.OrderTac.neq_sym. apply var_gen_spec.
+          apply~ lab_body_open_lab_term; apply~ lab_term_abs_to_lab_body.
+          apply fv_notin_open. apply~ VarSet.Raw.L.MO.OrderTac.neq_sym. auto.
+        * apply xc_fv.
+          subst ta. apply~ lab_body_open_lab_term. apply~ subst_preserve_lab_body.
+          apply fv_notin_open. apply~ VarSet.Raw.L.MO.OrderTac.neq_sym. auto.
+          apply var_gen_spec.
+    Qed.
+
+    (* PROVA COMEÇA AQUI *)
+    intros; gen x y; induction t using pterm_size_induction; intros; simpl in *.
+      - rewrite xc_equation; auto.
+      - case_var~.
+      - rewrite xc_equation; protect_left; rewrite xc_equation; subst left;
+          unfold open; simpl; fequal; apply lab_term_abs_to_lab_body in H; apply~ TMP.
+      - rewrite xc_equation; protect_left; rewrite xc_equation; simpl; subst left; inversion H;
+          rewrite IHt1,IHt2; auto.
+      - inversions H; unpack_union.
+        rewrite xc_equation; name_var_gen z; protect_left; rewrite xc_equation; subst left;
+          name_var_gen z'; unfold open; simpl; fequal.
+        + apply~ TMP.
+        + apply IHt1; auto.
+      - inversions H; unpack_union.
+        rewrite xc_equation; name_var_gen z; protect_left; rewrite xc_equation; name_var_gen z'.
+        rewrite subst_open; auto; subst left; fequal; apply~ TMP.
+Qed.
 
 Lemma xc_close_rename: forall t (x y: var),
     x \notin fv t -> y \notin fv t -> lab_body t -> close (xc (t^x)) x = close (xc (t^y)) y.
 Proof.
   intros; destruct (x == y); subst~.
   rewrite~ (@subst_intro y).
-  rewrite~ xc_rename.
+  rewrite~ xc_var_comm.
   rewrite~ close_var_rename.
   apply~ xc_fv.
 Qed.
 
-Lemma xc_close: forall t m (x:var), lab_body t -> x \notin fv t -> (close (xc(t^x)) x)^^m = [x ~> m]xc(t^x).
+Lemma xc_close: forall t m (x:var),
+    lab_body t -> x \notin fv t ->
+    (close (xc(t^x)) x)^^m = [x ~> m]xc(t^x).
 Proof.
   intros; rewrite <- subst_as_close_open;
     [reflexivity | apply xc_lab_term_term; apply lab_body_open_lab_term; auto].
 Qed.
 
-Lemma xc_correct : forall (m n: pterm) (x: var),
+Corollary xc_lab_subst: forall (m n: pterm) (x: var),
     x \notin fv m -> lab_body m -> term n -> xc(m [[n]]) = [x ~> n]xc(m^x).
 Proof.
-  intros; rewrite xc_equation; name_var_gen z; rewrite (xc_close_rename _ z x); try rewrite xc_close;
-    try apply notin_var_gen; auto.
+  intros; rewrite xc_equation; name_var_gen z; rewrite (xc_close_rename _ z x);
+    try rewrite xc_close; try apply notin_var_gen; auto.
 Qed.
 
+Lemma lab_term_is_a_lab_body: forall t : pterm, lab_term t -> lab_body t.
+Proof. Admitted.
+
+Lemma xc_body_lab_term: forall (m n: pterm),
+    lab_term m -> term n -> xc(m [[n]]) = xc m.
+Proof.
+  intros; pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z); auto.
+  - unfold open; rewrite~ open_lab_term. apply (xc_fv _ _ H) in U1; rewrite~ subst_fresh.
+  - apply~ lab_term_is_a_lab_body.
+Qed.
+
+(* Lemma bswap_com2: forall t v, term v -> &({0 ~> v}t) = {1 ~> v}(&t). Admitted. *)
+
+Corollary bswap_commute: forall t u (x: var), term u -> ({0 ~> x} ({1 ~> u} t)) = ({0 ~> u}({1 ~> x} (& t))).
+Admitted.
+
+Lemma xc_lab_sys_x: forall t t', lab_term t -> t ->_lab_x t' -> xc t = xc t'.
+Proof.
+  induction 2.
+  - pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z).
+    + unfold open; simpl. case_var. inversion H; subst; rewrite~ xc_term_invariant.
+    + admit.
+    + admit.
+    + admit.
+  - apply xc_body_lab_term; inversion H; auto.
+  - pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z).
+    + protect_left; rewrite xc_equation; try (repeat rewrite (xc_lab_subst _ _ z)).
+      * subst left; unfold open; simpl. rewrite xc_equation. simpl; auto.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
+    + admit.
+    + admit.
+    + admit.
+  - inversion H; subst; protect_left; rewrite xc_equation; name_var_gen z''; unfold open; simpl;
+      rewrite <- (@open_rec_term u z''); auto; pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z); auto.
+    + rewrite <- subst_close.
+      * unfold open.
+        subst left; rewrite (xc_lab_subst _ _ z); auto; unfold open; simpl;
+          rewrite xc_equation; name_var_gen z'; unfold open; simpl. rewrite <- bswap_commute.
+        lets: xc_close_rename; unfold open in *. rewrite H0 with (y := z''). reflexivity.
+        admit. admit. admit. admit.
+      * admit.
+      * admit.
+    + admit.
+    + admit.
+  - inversion H; subst; protect_left; rewrite xc_equation; name_var_gen z''; unfold open; simpl;
+      rewrite <- (@open_rec_term v z''); auto; pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z); auto.
+    rewrite (xc_lab_subst _ _ z); auto.
+    + unfold open; simpl; rewrite <- subst_close.
+      * subst left; rewrite (xc_lab_subst _ _ z); auto; unfold open; simpl.
+        rewrite xc_equation; name_var_gen z'; unfold open; simpl.
+        rewrite <- bswap_commute; lets: xc_close_rename; unfold open in *.
+        rewrite H1 with (y := z''). reflexivity. admit. admit. admit. admit. apply notin_union_l; auto.
+      * admit.
+      * admit.
+    + admit.
+    + admit.
+    + admit.
+Qed.
+
+Lemma lab_sys_x_term: forall t t', term t -> lab_sys_x t t' -> False.
+Proof. induction 2; inversion H. Qed.
+
+Lemma lab_sys_x_term_ctx: forall t t', term t -> (ESlab_contextual_closure lab_sys_x) t t' -> False.
+Proof.
+  induction 2.
+  - eapply lab_sys_x_term; eauto.
+  - inversion H; auto.
+  - inversion H; auto.
+  - inversion H; subst; pick_fresh z; apply H1 with z; auto.
+  - inversion H; subst; pick_fresh z; apply H1 with z; auto.
+  - inversion H; auto.
+  - inversion H; subst; pick_fresh z; apply H1 with z; auto.
+  - inversion H; auto.
+Qed.
+
+Definition lab_sys_x_ctx := ESlab_contextual_closure lab_sys_x.
+
+Lemma xc_lab_sys_x_ctx: forall t t', lab_term t -> lab_sys_x_ctx t t' -> xc t = xc t'.
+Proof.
+  induction 2; intros.
+  - apply xc_lab_sys_x; auto.
+  - inversion H;
+      rewrite xc_equation; protect_left; rewrite xc_equation; subst left; rewrite IHESlab_contextual_closure;
+      auto.
+  - inversion H;
+      rewrite xc_equation; protect_left; rewrite xc_equation; subst left; rewrite IHESlab_contextual_closure;
+        auto.
+  - inversion H;
+      rewrite xc_equation; protect_left; rewrite xc_equation; subst left; name_var_gen z; name_var_gen z'.
+    pick_fresh a; unpack_union; rewrite xc_close_rename with (y := a); auto.
+    protect_left. rewrite xc_close_rename with (y := a). subst left. rewrite H1. auto. auto.
+    apply H3. auto. apply var_gen_spec. auto. unfold lab_body; exists L0; auto. admit. apply var_gen_spec.
+  - admit.
+  - inversion H; subst; rewrite xc_equation; name_var_gen z; protect_left; rewrite xc_equation; name_var_gen z';
+      subst left; rewrite IHESlab_contextual_closure; auto.
+  - inversion H; pick_fresh z; unpack_union; do 2 try (rewrite (xc_lab_subst _ _ z)); auto.
+    + rewrite H1; auto.
+    + unfold lab_body; exists L0; intros. admit.
+  - inversion H; subst; exfalso; eapply lab_sys_x_term_ctx; eauto.
+Qed.
+
+Lemma subst_comm: forall t u v z z',
+    z <> z' -> z' \notin fv v -> z \notin fv u ->
+    term u -> term v ->
+    [z ~> u] ( [z' ~> v]t ) = [z' ~> v] ( [z ~> u]t ).
+Proof. Admitted.
+
+Lemma xc_sub_term: forall m n z,
+    z \notin fv m -> term n -> xc(m[n]) = ((close (xc(m^z)) z) [n]).
+Proof.
+  intros; rewrite xc_equation; name_var_gen z'; rewrite (xc_term_invariant n); auto;
+    rewrite xc_close_rename with (y := z); auto. apply var_gen_spec. admit.
+Qed.
+
+Lemma xc_eqc: forall t t', eqc t t' -> eqc (xc t) (xc t').
+Proof.
+  intros; destruct H.
+  - set (T := xc ((t [u]) [v])).
+    rewrite xc_equation; name_var_gen z; unfold open; simpl; rewrite (xc_term_invariant u); auto;
+      rewrite <- (@open_rec_term v); auto; rewrite xc_equation; name_var_gen z'; unfold open; simpl;
+        rewrite (xc_term_invariant v); auto; lets: xc_sub_term; unfold open in *.
+
+    rewrite <- H1; auto.
+Admitted.
+
+Lemma xc_lab_eqc: forall t t', lab_eqc t t' -> xc t = xc t'.
+Proof.
+  intros; destruct H.
+  - admit.                      (* não é valido *)
+  - protect_left; rewrite xc_equation; name_var_gen z'; unfold open; simpl; rewrite <- (@open_rec_term v); auto.
+    subst left; pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z); auto.
+    + unfold open; simpl; rewrite (@open_lab_term u); auto; rewrite xc_equation; name_var_gen z'';
+        unfold open; simpl; rewrite (xc_lab_subst _ _ z); auto.
+      * unfold open; simpl; apply (xc_fv _ _ H) in U4; rewrite (subst_fresh (xc u)); auto;
+          rewrite <- subst_close; auto. rewrite <- bswap_commute; auto.
+        lets: xc_close_rename; unfold open in *. rewrite H1 with (y := z'); auto.
+        apply var_gen_spec. admit. admit. admit.
+      * admit.
+      * admit.
+    + simpl; auto.
+    + admit.
+  - rewrite xc_equation; name_var_gen z'; unfold open; simpl; rewrite <- (@open_rec_term u); auto;
+      pick_fresh z; rewrite (xc_lab_subst _ _ z); auto.
+    rewrite (xc_lab_subst _ _ z); auto; unfold open; simpl.
+    + rewrite (@open_lab_term v); auto; protect_left; rewrite xc_equation; name_var_gen z''; unfold open; simpl;
+        subst left; unpack_union; apply (xc_fv _ _ H0) in U3; rewrite (subst_fresh (xc v)); auto;
+          rewrite <- subst_close; auto.
+      * rewrite bswap_commute; auto; lets: xc_close_rename; unfold open in *; simpl; rewrite H1 with (y := z'');
+          auto. admit. admit. admit.
+      * admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+  - pick_fresh z; unpack_union; rewrite (xc_lab_subst _ _ z); auto.
+    rewrite (xc_lab_subst _ _ z); auto; unfold open; simpl.
+    rewrite <- (@open_rec_term u); auto; rewrite <- (@open_rec_term v); auto.
+    pick_fresh z'; unpack_union;
+      rewrite (xc_lab_subst _ _ z'); auto.
+    rewrite (xc_lab_subst _ _ z'); auto; unfold open; simpl.
+    + rewrite <- bswap_commute; auto. rewrite subst_comm; auto. admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+Qed.
+
+Lemma xc_lab_eqc_ctx: forall t t', t =~e t' -> xc t = xc t'. Admitted.
+
+Lemma lab_eqC_wregular: forall t t', lab_term t -> t =~e t' -> lab_term t'. Admitted.
+
+Theorem xc_ex: forall t t', lab_term t -> t -->[ex] t' -> xc t = xc t'.
+Proof.
+  intros ? ? ? [? [? [t_leqC [ex_ctx t'_leqC] ] ] ]; lets HH: t_leqC;
+    apply xc_lab_eqc_ctx in t_leqC; apply xc_lab_eqc_ctx in t'_leqC;
+      apply xc_lab_sys_x_ctx in ex_ctx.
+  - rewrite t_leqC; rewrite <- t'_leqC; auto.
+  - eapply lab_eqC_wregular; eauto.
+Qed.
+
+  intros t t' Lt [? [? [c [d e] ] ] ]; apply xc_lab_eqc_ctx in c; apply xc_lab_eqc_ctx in e.
+  apply xc_lab_sys_x_ctx in d.
+  - rewrite c; rewrite <- e; auto.
+  - admit.
+Qed.

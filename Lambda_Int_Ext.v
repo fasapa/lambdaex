@@ -39,36 +39,32 @@ Definition lab_EE_ctx_red (R: pterm -> pterm -> Prop) (t: pterm) (u : pterm) :=
 Definition ext_lab_EE_ctx_red (R: pterm -> pterm -> Prop) (t: pterm) (u : pterm) := 
     exists t' u', (t =EE t')/\(ext_lab_contextual_closure R t' u')/\(u' =EE u).
 
-
 Definition lab_x_i_eq := ext_lab_EE_ctx_red lab_x_i.
 
 Definition lab_x_e_eq := ext_lab_EE_ctx_red sys_Bx.
 
 Notation "t -->[lx_i] u" := (lab_x_i_eq t u) (at level 59, left associativity).
 Notation "t -->[lx_e] u" := (lab_x_e_eq t u) (at level 59, left associativity).
-
 (* -------------- *)
 
 Lemma term_ee_is_eqc: forall t t', term t -> t =ee t' -> eqc t t'.
 Proof.
-    intros.
-    destruct H0. auto.
-    destruct H0; inversion H; subst.
-    pick_fresh x.
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H2. destruct H2.
-    apply notin_union in H2. destruct H2.
-    pose proof H4 x H2.
-    inversion H8.
-    Qed.
+  intros.
+  destruct H0. auto.
+  destruct H0; inversion H; subst.
+  pick_fresh x.
+  apply notin_union in Fr. destruct Fr.
+  apply notin_union in H2. destruct H2.
+  apply notin_union in H2. destruct H2.
+  pose proof H4 x H2.
+  inversion H8.
+Qed.
 
 Lemma SN_open: forall t x k, SN lex t -> SN lex ({k ~> (pterm_fvar x)} t).
-Proof.
-    Admitted.
+Proof. Admitted.
 
 Lemma SN_open_rename: forall t x y k, SN lex ({k ~> (pterm_fvar x)} t) -> SN lex ({k ~> (pterm_fvar y)} t).
-Proof.
-    Admitted.
+Proof. Admitted.
 
 Lemma lc_at'_open_rec_rename: forall t x y m n, lc_at' m (open_rec n (pterm_fvar x) t) -> lc_at' m (open_rec n (pterm_fvar y) t).
 Proof.
@@ -88,7 +84,6 @@ Proof.
   introv H. apply lab_term_eq_term'' in H. apply lab_term_eq_term''.
   apply lc_at'_open_rec_rename with x. assumption.
 Qed.
-
 
 Lemma lab_sys_x_i_e: forall t t' x x', lab_term t -> (x =EE t) -> (t' =EE x') -> lab_sys_lx t t' -> (x -->[lx_i] x' \/ x -->[lx_e] x').
 Proof.
@@ -169,7 +164,6 @@ Proof.
     intros. induction H. constructor. induction H.
     constructor 2; constructor 1. apply ctx_eqcc_sym; auto.
     apply star_closure_composition with u; auto.
-
     (* Qed. *)
 Admitted.
 
@@ -263,6 +257,54 @@ Proof.
     apply close_fresh; auto.
 Qed.
 
+
+(* FABRICIO: Essa prova tem em outros arquivos mas não foi umportada aqui *)
+Lemma pterm_app_open: forall t1 t2 t x,
+    pterm_app t1 t2 = t ^ x -> exists t1' t2', (t = pterm_app t1' t2') /\ (t1 = t1'^x) /\ (t2 = t2'^x).
+Proof.
+  intros t1 t2 t; destruct t; intros; unfold open in *; simpl in *; inversion H;
+    [destruct n; inversion H | repeat eexists]. Qed.
+
+(* FABRICIO: Essa prova tem em outros arquivos mas não foi umportada aqui *)
+Lemma pterm_abs_open: forall t1 t x,
+    pterm_abs t1 = t^x -> exists t1', (t = pterm_abs t1') /\ (t1 = {1 ~> pterm_fvar x}t1').
+Proof.
+  intros t1 t; destruct t; intros; unfold open in *; simpl in *; inversion H;
+    [destruct n; inversion H | repeat eexists]. Qed.
+
+Lemma pterm_sub_open: forall t1 t2 t x,
+    (t1 [t2]) = t ^ x -> exists t1' t2', (t = (t1' [t2'])) /\ (t1 = {1 ~> pterm_fvar x}t1') /\ (t2 = t2'^x).
+Proof.
+  intros t1 t2 t; destruct t; intros; unfold open in *; simpl in *; inversion H;
+    [destruct n; inversion H | repeat eexists]. Qed.
+
+Lemma pterm_sub_open1: forall t1 t2 t x,
+    (t1 [t2]) = {1 ~> pterm_fvar x}t ->
+    exists t1' t2', (t = (t1' [t2'])) /\ (t1 = {2 ~> pterm_fvar x}t1') /\ (t2 = {1 ~> pterm_fvar x}t2').
+Proof.
+  intros t1 t2 t; destruct t; intros; unfold open in *; simpl in *; inversion H;
+    [destruct n; inversion H | repeat eexists].
+  destruct n.
+  - inversion H.
+  - inversion H.
+Qed.
+
+Lemma pterm_sub'_open: forall t1 t2 t x,
+    (t1 [[t2]]) = t ^ x -> exists t1' t2', (t = (t1' [[t2']])) /\ (t1 = {1 ~> pterm_fvar x}t1') /\ (t2 = t2'^x).
+Proof.
+  intros t1 t2 t; destruct t; intros; unfold open in *; simpl in *; inversion H;
+    [destruct n; inversion H | repeat eexists]. Qed.
+
+Lemma pterm_sub'_open1: forall t1 t2 t x,
+    (t1 [[t2]]) = {1 ~> pterm_fvar x}t ->
+    exists t1' t2', (t = (t1' [[t2']])) /\ (t1 = {2 ~> pterm_fvar x}t1') /\ (t2 = {1 ~> pterm_fvar x}t2').
+Proof.
+  intros t1 t2 t; destruct t; intros; unfold open in *; simpl in *; inversion H;
+    [destruct n; inversion H | repeat eexists].
+  destruct n.
+  - inversion H.
+  - inversion H.
+Qed.
 
 (* ----------------------------------------------------- RED REGULAR *)
 
@@ -566,33 +608,165 @@ Lemma red_lab_regular'_sys_Bx: red_lab_regular' sys_Bx.
 Proof.
     Admitted.
 
+
+
+
 (* ----------------------------------------------------- RED RENAME *)
 
-Lemma red_rename_lab_ctx: forall R, red_rename R -> red_rename (lab_contextual_closure R).
+(* FABRICIO *)
+Lemma red_rename_trans_term: forall R, red_regular R -> red_rename R -> red_rename (trans_closure R).
 Proof.
-    Admitted.
+  unfold red_rename in *; unfold red_regular in *; intros; remember (t^x) as Tx; remember (t'^x) as T'x;
+    generalize dependent t; generalize dependent t'; generalize dependent x; generalize dependent y;
+      induction H3; intros; subst.
+  - constructor; eauto.
+  - lets HH: H1; apply H in HH; destruct HH; apply open_close_var with (x := x) in H6;
+      rewrite H6 in H1; rewrite H6 in H3.
+    apply transitive_reduction with (u := (close u x ^ y)).
+    + eapply H0; eauto; apply close_fresh.
+    + specialize (IHtrans_closure y x t' H2 eq_refl (close u x) (close_fresh x u) H6); auto.
+Qed.
+
+(* FABRICIO *)
+Lemma red_rename_trans_lab: forall R, red_lab_regular R -> red_rename R -> red_rename (trans_closure R).
+Proof.
+  unfold red_rename in *; unfold red_lab_regular in *; intros; remember (t^x) as Tx; remember (t'^x) as T'x;
+    generalize dependent t; generalize dependent t'; generalize dependent x; generalize dependent y;
+      induction H3; intros; subst.
+  - constructor; eauto.
+  - lets HH: H1; apply H in HH; destruct HH; apply lab_open_close_var with (x := x) in H6;
+      rewrite H6 in H1; rewrite H6 in H3.
+    apply transitive_reduction with (u := (close u x ^ y)).
+    + eapply H0; eauto; apply close_fresh.
+    + specialize (IHtrans_closure y x t' H2 eq_refl (close u x) (close_fresh x u) H6); auto.
+Qed.
+
+(* FABRICIO: Não é utilizada. *)
+(* Lemma red_rename_lab_ctx: forall R, red_rename R -> red_rename (lab_contextual_closure R). *)
+(* Proof. *)
+(*     Admitted. *)
+
+(* FABRICIO Zproperty lex.v *)
+Corollary bswap_commute: forall t u x, term u -> ({0 ~> pterm_fvar x} ({1 ~> u} t)) = ({0 ~> u}({1 ~> pterm_fvar x} (& t))).
+Proof. Admitted.
+
+Lemma lab_body_rename: forall t x y n, lab_body ( {n ~> (pterm_fvar x) }t ) -> lab_body ( {n ~> (pterm_fvar y) }t ).
+Proof. Admitted.
 
 Lemma red_rename_simpl_lab_ctx: forall R, red_rename R -> red_rename (simpl_lab_contextual_closure R).
 Proof.
-    Admitted.
+  unfold red_rename in *; intros;  remember (t^x) as Tx; remember (t'^x) as T'x;
+    generalize dependent t; generalize dependent t'; generalize dependent x; generalize dependent y;
+      induction H2; intros; subst.
+  - apply s_lab_redex; eauto.
+  - apply pterm_app_open in HeqTx as [? [? [? [? ?] ] ] ]; apply pterm_app_open in HeqT'x as [? [? [? [? ?] ] ] ];
+      subst.
+    assert (x1 = x3). admit. unfold open; simpl in *; subst; clear H9; apply s_lab_app_left.
+    + eapply lab_term_open_rename; eauto.
+    + unfold open in *; apply notin_union in H1 as [? ?]; apply notin_union in H3 as [? ?];
+        specialize (IHsimpl_lab_contextual_closure y x x2 H1 eq_refl x0 H3 eq_refl); auto.
+  - apply pterm_app_open in HeqTx as [? [? [? [? ?] ] ] ]; apply pterm_app_open in HeqT'x as [? [? [? [? ?] ] ] ];
+      subst. assert (x0 = x2). admit.
+    unfold open in *; simpl in *; subst; apply s_lab_app_right.
+    + eapply lab_term_open_rename; eauto.
+    + apply notin_union in H3 as [? ?]; apply notin_union in H1 as [? ?].
+      specialize (IHsimpl_lab_contextual_closure y x x3 H5 eq_refl x1 H4 eq_refl); auto.
+  - apply pterm_abs_open in HeqTx as [? [? ?] ]; apply pterm_abs_open in HeqT'x as [? [? ?] ]; subst;
+      unfold open in *; simpl in *.
+        apply s_lab_abs_in with (L \u {{x}} ).
+        intros; unfold open in *; apply notin_union in H4 as [? ?]; (* apply notin_union in H4 as [? ?]; *)
+          rewrite bswap_commute; auto; rewrite bswap_commute with (t := x1); auto.
+        assert (HH1: x \notin fv ({1 ~> pterm_fvar x2}(& x1)) ). admit.
+        assert (HH2: {0 ~> pterm_fvar x2}({1 ~> pterm_fvar x}x1) = {0 ~> pterm_fvar x}({1 ~> pterm_fvar x2}(& x1))).
+        { rewrite bswap_commute; auto. }
+        assert (HH3: x \notin fv ({1 ~> pterm_fvar x2}(& x0))). admit.
+        assert (HH4: {0 ~> pterm_fvar x2}({1 ~> pterm_fvar x}x0) = {0 ~> pterm_fvar x}({1 ~> pterm_fvar x2}(& x0))).
+        { rewrite bswap_commute; auto. }
+        specialize (H1 x2 H4 y x ({1 ~> pterm_fvar x2} (& x1)) HH1 HH2 ({1 ~> pterm_fvar x2} (& x0)) HH3 HH4).
+        auto.
+  - apply pterm_sub_open in HeqTx as [? [? [? [? ?] ] ] ]; apply pterm_sub_open in HeqT'x as [? [? [? [? ?] ] ] ];
+      subst. assert (HH: x1 = x3). admit.
+    subst; clear H10; unfold open in *; simpl in *;
+      apply notin_union in H3 as [? ?]; apply notin_union in H4 as [? ?].
+    apply s_lab_subst_left with (L \u {{x}}).
+    + eapply lab_term_open_rename; eauto.
+    + intros; unfold open; simpl; apply notin_union in H7 as [? ?].
+      assert (HH1: x \notin fv ({1 ~> pterm_fvar x1}(& x2))). admit.
+      assert (HH2: {0 ~> pterm_fvar x1}({1 ~> pterm_fvar x}x2) = {0 ~> pterm_fvar x}({1 ~> pterm_fvar x1}(& x2))).
+      { rewrite bswap_commute; auto. }
+      assert (HH3: x \notin fv ({1 ~> pterm_fvar x1}(& x0))). admit.
+      assert (HH4: {0 ~> pterm_fvar x1}({1 ~> pterm_fvar x}x0) = {0 ~> pterm_fvar x}({1 ~> pterm_fvar x1}(& x0))).
+      { rewrite bswap_commute; auto. }
+      specialize (H2 _ H7 y x ({1 ~> pterm_fvar x1}(& x2)) HH1 HH2 ({1 ~> pterm_fvar x1}(& x0)) HH3 HH4).
+      rewrite bswap_commute; auto; rewrite bswap_commute with (t := x2); auto.
+  - apply pterm_sub_open in HeqTx as [? [? [? [? ?] ] ] ]; apply pterm_sub_open in HeqT'x as [? [? [? [? ?] ] ] ];
+      subst; unfold open in *; simpl in *. assert (HH1: x0 = x2). admit. subst.
+    apply notin_union in H1 as [? ?]; apply notin_union in H3 as [? ?]; clear H8;
+      apply s_lab_subst_right.
+    + eapply lab_body_rename; eauto.
+    + specialize (IHsimpl_lab_contextual_closure y x x3 H4 eq_refl x1 H5 eq_refl); auto.
+  - apply pterm_sub'_open in HeqTx as [? [? [? [? ?] ] ] ]; apply pterm_sub'_open in HeqT'x as [? [? [? [? ?] ] ] ];
+      subst. assert (HH1: x1 = x3). admit.
+    subst; clear H10; unfold open in *; simpl in *;
+      apply s_lab_subst'_left with (L \u {{x}}).
+    + eapply term_open_rename; eauto.
+    + intros; apply notin_union in H5 as [? ?]; apply notin_union in H4 as [? ?]; apply notin_union in H3 as [? ?];
+        unfold open in *; simpl in *.
+      assert (HH2: x \notin fv ({1 ~> pterm_fvar x1}(& x2))). admit.
+      assert (HH3: {0 ~> pterm_fvar x1}({1 ~> pterm_fvar x}x2) = {0 ~> pterm_fvar x}({1 ~> pterm_fvar x1}(& x2))).
+      { rewrite bswap_commute; auto. }
+      assert (HH4: x \notin fv ({1 ~> pterm_fvar x1}(& x0))). admit.
+      assert (HH5: {0 ~> pterm_fvar x1}({1 ~> pterm_fvar x}x0) = {0 ~> pterm_fvar x}({1 ~> pterm_fvar x1}(& x0))).
+      { rewrite bswap_commute; auto. }
+      specialize (H2 _ H5 y x ({1 ~> pterm_fvar x1}(&x2)) HH2 HH3 ({1 ~> pterm_fvar x1}(&x0)) HH4 HH5);
+        rewrite bswap_commute; auto; rewrite bswap_commute with (t := x2); auto.
+  - apply pterm_sub'_open in HeqTx as [? [? [? [? ?] ] ] ]; apply pterm_sub'_open in HeqT'x as [? [? [? [? ?] ] ] ];
+      subst. assert (x0 = x2). admit. subst. clear H9. unfold open in *; simpl in *.
+    apply  s_lab_subst'_right.
+    + eapply lab_body_rename; eauto.
+    + eapply term_open_rename; eauto.
+    + apply notin_union in H3 as [? ?]. apply notin_union in H4 as [? ?].
+      eapply H; eauto.
+Qed.
 
 Lemma red_rename_ext_lab_ctx: forall R, red_rename R -> red_rename (ext_lab_contextual_closure R).
 Proof.
-    Admitted.
+    unfold red_rename in *; intros;  remember (t^x) as Tx; remember (t'^x) as T'x;
+      generalize dependent t; generalize dependent t'; generalize dependent x; generalize dependent y;
+        induction H2; intros; subst.
+    - admit.
+Admitted.
 
-Lemma red_rename_trans: forall R, red_rename R -> red_rename (trans_closure R).
+Lemma eq_open_rename: forall t1 t2 x y n m,
+    x \notin fv t1 ->
+    x \notin fv t2 ->
+    {n ~> pterm_fvar x}t1 = {m ~> pterm_fvar x}t2 -> {n ~> pterm_fvar y}t1 = {m ~> pterm_fvar y}t2.
 Proof.
-    Admitted.
+  intros; destruct (n == m); subst.
+  - generalize dependent x; generalize dependent y; induction t1,t2; intros;
+      simpl in *; inversion H1; try (destruct (m === n); inversion H1).
+    + destruct (m === n0); inversion H1; auto.
+    + destruct (m === n0); inversion H1; auto.
+    + subst; apply notin_same in H0; exfalso; auto.
+    + subst; apply notin_same in H; exfalso; auto.
+    + subst; auto.
+    + apply notin_union in H as [? ?]; apply notin_union in H0 as [? ?].
+      try erewrite IHt1_2; eauto. rewri
 
 Lemma red_rename_lab_eqc: red_rename lab_eqc.
 Proof.
-    Admitted.
+  unfold red_rename in *; intros; inversion H1.
+  - apply pterm_sub'_open in H2 as [? [? [? [? ?] ] ] ];
+      apply pterm_sub_open in H3 as [? [? [? [? ?] ] ] ];
+      apply pterm_sub'_open1 in H8 as [? [? [? [? ?] ] ] ];
+      apply pterm_sub_open1 in H6 as [? [? [? [? ?] ] ] ]; subst; unfold open in *; simpl in *.
+    rewrite H13.
 
 Lemma red_rename_eqcc: red_rename eqcc.
 Proof.
    unfold red_rename.
    intros.
-   induction H1. 
+   induction H1.
    pose proof red_rename_eqc.  unfold red_rename in H2.
    constructor 1.
    apply H2 with x; auto.
@@ -621,8 +795,6 @@ Proof.
     (*apply IHtrans_closure1; auto. *)
     (*apply IHtrans_closure2; auto. *)
     Admitted.
-
-
 
 Lemma red_rename_lab_xi: red_rename lab_x_i.
 Proof.
@@ -657,207 +829,277 @@ Proof.
 (* ---------------------- *)
 
 Lemma EE_lab_term : forall t t', lab_term t -> t =EE t' -> lab_term t'.
-Proof.
-    intros. apply red_lab_regular'_EE in H0. destruct H0; auto.
-
-    Qed.
+Proof. intros. apply red_lab_regular'_EE in H0. destruct H0; auto. Qed.
 
 (* ------------------------------------------------------- star_lab clos *)
 
+(* FABRICIO *)
 Lemma star_lab_closure_app_left: forall R t t' u, lab_term u -> star_closure (simpl_lab_contextual_closure R) t t' -> star_closure (simpl_lab_contextual_closure R) (pterm_app t u) (pterm_app t' u).
 Proof.
-    intros.
-    induction H0.
-    constructor.
-    constructor 2.
-    induction H0.
-    constructor. constructor 2; auto.
-    constructor 2 with (pterm_app u0 u); auto. 
-    (* Qed. *)
-Admitted.
+  intros; induction H0.
+  - constructor.
+  - apply star_trans_reduction; induction H0.
+    + constructor; apply s_lab_app_left; auto.
+    + apply transitive_reduction with (u := (pterm_app u0 u)).
+      * apply s_lab_app_left; auto.
+      * auto.
+Qed.
 
+(* FABRICIO *)
 Lemma star_lab_closure_app_right: forall R t t' u, lab_term u -> star_closure (simpl_lab_contextual_closure R) t t' -> star_closure (simpl_lab_contextual_closure R) (pterm_app u t) (pterm_app u t').
 Proof.
-    intros.
-    induction H0.
-    constructor.
-    constructor 2.
-    induction H0.
-    constructor. constructor 3; auto.
-    constructor 2 with (pterm_app u u0); auto.
-    (* Qed. *)
-Admitted.
-
-
-Lemma trans_lab_closure_abs: forall R t t' L, lab_term (pterm_abs t) -> red_lab_regular' R -> red_rename R -> (forall y : VarSet.elt, y \notin L -> trans_closure (simpl_lab_contextual_closure R) (t ^ y) (t' ^ y)) -> trans_closure (simpl_lab_contextual_closure R) (pterm_abs t) (pterm_abs t').
-Proof.
-    intros R t t' L term_abs reg. intros.
-    inversion term_abs; subst.
-    pick_fresh z.
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    pose proof (H0 z H1). clear H0.
-    remember (t ^ z) as u.  remember (t' ^ z) as u'.
-    generalize dependent t. generalize dependent t'.
-    induction H6; intros; subst.
-    constructor 1. constructor 4 with L. intros. 
-    apply red_rename_simpl_lab_ctx in H. unfold red_rename in H. apply H with z; auto.
-    assert (lab_term u). 
-    apply red_lab_regular'_simpl_lab_ctx in reg.
-    apply red_lab_regular'_trans in reg.
-(*     apply reg in H6_. *)
-(*     pose proof (H2 z H5). *)
-(*     apply H6_; auto. *)
-
-(*     pose proof (lab_close_var_spec z H0). *)
-(*     destruct H6 as [u0 [eq1 [H7 H8] ] ]. subst. *)
-(*     constructor 2 with (pterm_abs u0). *)
-(*     apply IHtrans_closure1; auto. *)
-(*     apply IHtrans_closure2; auto. *)
-(*     inversion H7; subst. *)
-(*     constructor 3 with x; auto. *)
-(*     intros. *)
-(*     apply lab_term_open_rename with z; auto. *)
-    (* Qed. *)
-Admitted.
-
-Lemma star_lab_closure_abs: forall R t t' L, (forall y : VarSet.elt, y \notin L -> star_closure (simpl_lab_contextual_closure R) (t ^ y) (t' ^ y)) -> red_rename R -> lab_term (pterm_abs t) -> red_lab_regular' R -> star_closure (simpl_lab_contextual_closure R) (pterm_abs t) (pterm_abs t').
-Proof.
-    intros.
-    pick_fresh z.
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H3. destruct H3.
-    pose proof (H z H3).
-    remember (t ^ z) as u.  remember (t' ^ z) as u'.
-    generalize dependent t. generalize dependent t'.
-    induction H6; intros; subst.
-    apply open_var_inj in Hequ; subst; auto. constructor 1; auto. 
-    constructor 2. apply trans_lab_closure_abs with L; auto. intros.
-    apply red_rename_trans with z; auto. apply red_rename_simpl_lab_ctx; auto.
+    intros; induction H0.
+  - constructor.
+  - apply star_trans_reduction; induction H0.
+    + constructor; apply s_lab_app_right; auto.
+    + apply transitive_reduction with (u := (pterm_app u u0)).
+      * apply s_lab_app_right; auto.
+      * auto.
 Qed.
 
+(* FABRICIO *)
+Lemma red_rename_trans_lab_closure_eqcc: red_rename (trans_closure (simpl_lab_contextual_closure eqcc)).
+Proof. apply red_rename_trans. apply red_rename_simpl_lab_ctx. apply red_rename_eqcc. Qed.
 
-Lemma trans_lab_closure_outer_sub: forall R t t' v L, lab_term (t[v]) -> red_lab_regular' R -> red_rename R -> (forall y : VarSet.elt, y \notin L -> trans_closure (simpl_lab_contextual_closure R) (t ^ y) (t' ^ y)) -> trans_closure (simpl_lab_contextual_closure R) (t[v]) (t'[v]).
+(* FABRICIO *)
+Lemma red_rename_ctx_eqcc: red_rename (simpl_lab_contextual_closure eqcc).
+Proof. apply red_rename_simpl_lab_ctx. apply red_rename_eqcc. Qed.
+
+(* FABRICIO *)
+Lemma term_eqc_open: forall (t t' : pterm) (x : var),
+    term t' -> eqc (t ^ x) t' -> exists u, t' = u ^ x.
 Proof.
-    intros R t t' v L lab_term_tv reg. intros.
-    inversion lab_term_tv; subst.
-    pick_fresh z.
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    pose proof (H0 z H1). clear H0.
-    remember (t ^ z) as u.  remember (t' ^ z) as u'.
-    generalize dependent t. generalize dependent t'.
-    induction H8; intros; subst.
-    constructor 1. constructor 5 with L; auto. intros. 
-    apply red_rename_simpl_lab_ctx in H. unfold red_rename in H. apply H with z; auto.
-    assert (lab_term u). 
-
-
-    apply red_lab_regular'_simpl_lab_ctx in reg.
-    apply red_lab_regular'_trans in reg.
-(*     apply reg in H8_. *)
-(*     pose proof (H3 z H7). *)
-(*     apply H8_; auto. *)
-
-(*     pose proof (lab_close_var_spec z H0). *)
-(*     destruct H8 as [u0 [eq1 [H9 H10] ] ]. subst. *)
-(*     constructor 2 with (u0[v]). *)
-(*     apply IHtrans_closure1; auto. *)
-(*     apply IHtrans_closure2; auto. *)
-(*     inversion H9; subst. *)
-(*     constructor 4 with x; auto. *)
-(*     intros. *)
-(*     apply lab_term_open_rename with z; auto. *)
-    (* Qed. *)
-Admitted.
-
-Lemma star_lab_closure_outer_sub: forall R t t' v L, lab_term (t[v]) -> red_lab_regular' R -> (forall y : VarSet.elt, y \notin L -> star_closure (simpl_lab_contextual_closure R) (t ^ y) (t' ^ y)) -> red_rename R -> star_closure (simpl_lab_contextual_closure R) (t[v]) (t'[v]).
-Proof.
-    intros R t t' v L lab_term_tv reg. intros.
-    inversion lab_term_tv; subst.
-    pick_fresh z.
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    pose proof (H z H1).
-    remember (t ^ z) as u.  remember (t' ^ z) as u'.
-    generalize dependent t. generalize dependent t'.
-    induction H8; intros; subst.
-    apply open_var_inj in Hequ; subst; auto. constructor 1; auto. 
-    constructor 2. apply trans_lab_closure_outer_sub with L; auto. intros.
-    apply red_rename_trans with z; auto. apply red_rename_simpl_lab_ctx; auto.
+  intros. exists (close t' x). rewrite <- open_close_var; auto.
 Qed.
 
+(* FABRICIO *)
+Lemma lab_term_eqc_open: forall (t t' : pterm) (x : var),
+    lab_term t' -> eqc (t ^ x) t' -> exists u, t' = u ^ x.
+Proof.
+  intros. exists (close t' x). rewrite <- lab_open_close_var; auto.
+Qed.
+
+(* FABRICIO *)
+Lemma lab_term_lab_eqc_open: forall (t t' : pterm) (x : var),
+    lab_term t' -> lab_eqc (t ^ x) t' -> exists u, t' = u ^ x.
+Proof.
+  intros. exists (close t' x). rewrite <- lab_open_close_var; auto.
+Qed.
+
+(* FABRICIO *)
+Lemma term_eqc_open_fv: forall (t t' : pterm) (x : VarSet.elt),
+    term t' -> x \notin fv t -> eqc (t ^ x) t' -> exist u, t' = u ^ x /\ x \notin fv u.
+Proof.
+  intros; apply term_eqc_open in H1; auto; destruct H1;
+    exists (close t' x).
+    split. rewrite <- open_close_var; auto.
+    apply close_fresh.
+Qed.
+
+(* FABRICIO *)
+Lemma lab_term_eqc_open_fv: forall (t t' : pterm) (x : VarSet.elt),
+    lab_term t' -> x \notin fv t -> eqc (t ^ x) t' -> exist u, t' = u ^ x /\ x \notin fv u.
+Proof.
+  intros; apply lab_term_eqc_open in H1; auto; destruct H1;
+    exists (close t' x).
+    split. rewrite <- lab_open_close_var; auto.
+    apply close_fresh.
+Qed.
+
+(* FABRICIO *)
+Lemma lab_term_lab_eqc_open_fv: forall (t t' : pterm) (x : VarSet.elt),
+    lab_term t' -> x \notin fv t -> lab_eqc (t ^ x) t' -> exist u, t' = u ^ x /\ x \notin fv u.
+Proof.
+  intros; apply lab_term_lab_eqc_open in H1; auto; destruct H1;
+    exists (close t' x).
+    split. rewrite <- lab_open_close_var; auto.
+    apply close_fresh.
+Qed.
+
+(* FABRICIO *)
+Lemma simpl_lab_eqcc_open_fv: forall (t t' : pterm) (x : var),
+    lab_term t' -> x \notin fv t -> (simpl_lab_contextual_closure eqcc) (t ^ x) t' -> exists u, t' = u ^ x /\ x \notin fv u.
+Proof.
+  intros; remember (t ^ x) as Tx; generalize dependent t; induction H1; intros;
+    [| exists (close (pterm_app t' u) x) | exists (close (pterm_app t u') x) | exists (close (pterm_abs t') x) |
+     exists (close (t' [u]) x) | exists (close (t [u']) x) | exists (close (t' [[u]]) x) | exists (close (t [[u']]) x) ];
+    try (split; [rewrite <- lab_open_close_var | apply notin_fv_close]; auto).
+  subst; destruct H0; [apply lab_term_eqc_open_fv in H0 | apply lab_term_lab_eqc_open_fv in H0]; auto.
+Qed.
+
+(* FABRICIO *)
+Lemma lab_closure_abs: forall t t' L,
+    lab_term (pterm_abs t) ->
+    (forall y : VarSet.elt, y \notin L -> (simpl_lab_contextual_closure eqcc) (t ^ y) (t' ^ y)) ->
+    (simpl_lab_contextual_closure eqcc) (pterm_abs t) (pterm_abs t').
+Proof. intros; apply s_lab_abs_in with L; auto. Qed.
+
+(* FABRICIO *)
+Lemma lab_term_abs_open: forall t x, x \notin fv t -> lab_term (t^x) -> lab_term (pterm_abs t).
+Proof.
+  intros; eapply lab_term_abs with (fv t); intros; try eapply lab_term_open_rename; eauto.
+Qed.
+
+(* FABRICIO *)
+Lemma trans_lab_closure_abs: forall t t' L,
+    lab_term (pterm_abs t) ->
+    (forall y : VarSet.elt, y \notin L -> trans_closure (simpl_lab_contextual_closure eqcc) (t ^ y) (t' ^ y)) ->
+    trans_closure (simpl_lab_contextual_closure eqcc) (pterm_abs t) (pterm_abs t').
+Proof.
+  intros; inversion H; subst. pick_fresh z;
+    apply notin_union in Fr; destruct Fr;
+      apply notin_union in H1; destruct H1;
+        apply notin_union in H1; destruct H1.
+  specialize (H0 _ H1); remember (t^z) as Tz; remember (t'^z) as T'z;
+    generalize dependent t; generalize dependent t'; induction H0; intros; subst.
+  - constructor; apply lab_closure_abs with (fv t'); auto; intros;
+    lets: red_rename_ctx_eqcc; unfold red_rename in *; eapply H7; eauto.
+  - lets: H; lets: red_lab_regular'_ctx_eqcc; unfold red_lab_regular' in *;
+      apply H8 in H7; apply H4 in H5; apply H7 in H5; clear H8; clear H7.
+    lets: H. apply simpl_lab_eqcc_open_fv in H7 as [? [? ?] ]; subst; auto.
+    + apply transitive_reduction with (u := (pterm_abs x)).
+      * abstract (apply lab_closure_abs with (fv x); eauto;
+                  intros; lets: red_rename_ctx_eqcc; unfold red_rename in *; eapply H9; eauto).
+      * (* inversion H3; subst; lets: red_lab_regular'_ctx_eqcc; unfold red_lab_regular' in *; apply H in H5. *)
+        specialize (IHtrans_closure t' eq_refl H3 x (@lab_term_abs_open x z H8 H5) eq_refl);
+          apply IHtrans_closure; auto; intros; apply lab_term_open_rename with z; auto.
+Qed.
+
+(* FABRICIO *)
+Lemma star_lab_closure_abs: forall t t' L,
+    (forall y : VarSet.elt, y \notin L -> (t ^ y) =EE (t' ^ y)) ->
+    lab_term (pterm_abs t) ->
+    (pterm_abs t) =EE (pterm_abs t').
+Proof.
+  intros; pick_fresh z;
+    apply notin_union in Fr; destruct Fr;
+      apply notin_union in H1; destruct H1.
+  specialize (H _ H1).
+  remember (t^z) as Tz; remember (t'^z) as T'z;
+    generalize dependent t; generalize dependent t'; induction H; intros; subst.
+  - assert (HH: t' = t0).
+    { admit. }                  (* trivial *)
+    subst; constructor.
+  - apply star_trans_reduction; apply trans_lab_closure_abs with (fv t'); auto;
+      intros; lets: red_rename_trans_lab_closure_eqcc; unfold red_rename in *; eapply H5; eauto.
+Qed.
+
+(* FABRICIO: Essa prova não estava disponível, mas é possivel encontra-la nos outros arquivos. *)
+Lemma lab_term_lab_body: forall t x, x \notin fv t -> lab_body t -> lab_term (t^x).
+Proof. Admitted.
+
+(* FABRICIO *)
+Lemma lab_term_sub_open: forall t v x, x \notin fv t -> lab_term (t^x) -> lab_term v -> lab_term (t[v]).
+Proof.
+  intros; eapply lab_term_sub with (fv t); intros; try eapply lab_term_open_rename; eauto.
+Qed.
+
+(* FABRICIO *)
+Lemma lab_term_lsub_open: forall t v x, x \notin fv t -> lab_term (t^x) -> term v -> SN lex v -> lab_term (t[[v]]).
+Proof.
+  intros; eapply lab_term_sub' with (fv t); intros; try eapply lab_term_open_rename; eauto.
+Qed.
+
+(* FABRICIO *)
+Lemma lab_closure_outer_sub: forall t t' v L, lab_term (t[v]) -> (forall y : VarSet.elt, y \notin L -> (simpl_lab_contextual_closure eqcc) (t ^ y) (t' ^ y)) -> (simpl_lab_contextual_closure eqcc) (t[v]) (t'[v]).
+Proof. intros; inversion H; eapply s_lab_subst_left with L; eauto. Qed.
+
+(* FABRICIO *)
+Lemma trans_lab_closure_outer_sub: forall t t' v L, lab_term (t[v]) -> (forall y : VarSet.elt, y \notin L -> trans_closure (simpl_lab_contextual_closure eqcc) (t ^ y) (t' ^ y)) -> trans_closure (simpl_lab_contextual_closure eqcc) (t[v]) (t'[v]).
+Proof.
+  intros; inversion H; pick_fresh z; subst.
+  apply notin_union in Fr. destruct Fr.
+  apply notin_union in H1. destruct H1.
+  apply notin_union in H1. destruct H1.
+  apply notin_union in H1. destruct H1.
+  apply notin_union in H1. destruct H1.
+  apply notin_union in H1. destruct H1.
+  specialize (H0 _ H1); remember (t^z) as Tz; remember (t'^z) as T'z;
+    generalize dependent t; generalize dependent t'; induction H0.
+  - intros; subst; apply one_step_reduction; eapply lab_closure_outer_sub; eauto; intros.
+    assert (HH: red_rename (simpl_lab_contextual_closure eqcc)).
+    apply red_rename_ctx_eqcc. unfold red_rename in *; apply HH with (x := z); auto.
+  - intros; subst; lets: H; apply red_lab_regular'_ctx_eqcc in H. apply H in H5; auto;
+      lets: H11; apply (simpl_lab_eqcc_open_fv _ H5 H8) in H11; destruct H11; destruct H11;
+        subst.
+    apply transitive_reduction with (u := (x [v])).
+    + apply lab_closure_outer_sub with (L := fv x); eauto; intros.
+      lets: red_rename_ctx_eqcc; unfold red_rename in *;
+        eapply H14; eauto.
+    + specialize (IHtrans_closure t' eq_refl H7 x (lab_term_sub_open _ H13 H5 H4) eq_refl).
+      apply IHtrans_closure; auto; intros; eapply lab_term_open_rename; eauto.
+      Grab Existential Variables. exact L.
+Qed.
+
+(* FABRICIO *)
+Lemma star_lab_closure_outer_sub: forall t t' v L, lab_term (t[v]) -> (forall y : VarSet.elt, y \notin L -> (t ^ y) =EE (t' ^ y)) -> (t[v]) =EE (t'[v]).
+Proof.
+  intros; pick_fresh z.
+  apply notin_union in Fr. destruct Fr.
+  apply notin_union in H1. destruct H1.
+  apply notin_union in H1. destruct H1.
+  specialize (H0 _ H1). inversion H0; subst.
+  - assert (HH: t = t'). { admit.  } subst. (* trivial *)
+    apply reflexive_reduction.
+  - apply star_trans_reduction.
+    eapply trans_lab_closure_outer_sub; eauto; intros.
+    lets HHH: red_rename_trans_lab_closure_eqcc; unfold red_rename in *.
+    apply HHH with (x := z); eauto.
+    Grab Existential Variables. exact L.
+Qed.
+
+(* FABRICIO *)
 Lemma star_lab_closure_inner_sub: forall R t u u', lab_body t -> star_closure (simpl_lab_contextual_closure R) u u' -> star_closure (simpl_lab_contextual_closure R) (t[u]) (t[u']).
 Proof.
-    intros.
-    induction H0.
-    constructor.
-    constructor 2.
-    induction H0.
-    constructor. constructor 6; auto.
-(*     constructor 2 with (t[u]); auto.  *)
-    (* Qed. *)
-Admitted.
+  intros; induction H0.
+  - constructor.
+  - apply star_trans_reduction; induction H0.
+    + constructor. apply s_lab_subst_right; auto.
+    + apply transitive_reduction with (u := t[u]).
+      * apply s_lab_subst_right; auto.
+      * auto.
+Qed.
 
-Lemma trans_lab_closure_outer_lsub: forall R t t' v L, lab_term (t[[v]]) -> red_lab_regular' R -> red_rename R -> (forall y : VarSet.elt, y \notin L -> trans_closure (simpl_lab_contextual_closure R) (t ^ y) (t' ^ y)) -> trans_closure (simpl_lab_contextual_closure R) (t[[v]]) (t'[[v]]).
+(* FABRICIO *)
+Lemma lab_closure_outer_lsub: forall t t' v L, lab_term (t[[v]]) -> (forall y : VarSet.elt, y \notin L -> (simpl_lab_contextual_closure eqcc) (t ^ y) (t' ^ y)) -> (simpl_lab_contextual_closure eqcc) (t[[v]]) (t'[[v]]).
+Proof. intros; inversion H; subst; apply s_lab_subst'_left with L; auto. Qed.
+
+(* FABRICIO *)
+Lemma trans_lab_closure_outer_lsub: forall t t' v L, lab_term (t[[v]]) -> (forall y : VarSet.elt, y \notin L -> trans_closure (simpl_lab_contextual_closure eqcc) (t ^ y) (t' ^ y)) -> trans_closure (simpl_lab_contextual_closure eqcc) (t[[v]]) (t'[[v]]).
 Proof.
-    intros R t t' v L lab_term_tv reg. intros.
-    inversion lab_term_tv; subst.
-    pick_fresh z.
+  intros; inversion H; subst; pick_fresh z;
+    apply notin_union in Fr; destruct Fr;
+      apply notin_union in H1; destruct H1;
+        apply notin_union in H1; destruct H1;
+          apply notin_union in H1; destruct H1.
+  specialize (H0 _ H1); remember (t^z) as Tz; remember (t'^z) as T'z;
+    generalize dependent t; generalize dependent t'; induction H0; intros.
+  - subst; apply one_step_reduction; apply lab_closure_outer_lsub with L; auto.
+    intros; lets: red_rename_ctx_eqcc; (* unfold red_rename in *. *) eapply H10; eauto.
+  - subst; lets HH: H; apply red_lab_regular'_ctx_eqcc in HH; apply H7 in H8; apply HH in H8; clear HH.
+    lets HH: H; apply (simpl_lab_eqcc_open_fv _ H8 H9) in HH; destruct HH; destruct H10; subst.
+    apply transitive_reduction with (u := (x [[v]])).
+    + apply lab_closure_outer_lsub with (L := fv x); eauto; intros;
+        lets: red_rename_ctx_eqcc; unfold red_rename in *; eapply H12; eauto.
+    + specialize (IHtrans_closure t' eq_refl H6 x (lab_term_lsub_open _ H11 H8 H4 H5) eq_refl);
+        apply IHtrans_closure; auto; intros; eapply lab_term_open_rename; eauto.
+Qed.
 
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    pose proof (H0 z H1). clear H0.
-    remember (t ^ z) as u.  remember (t' ^ z) as u'.
-    generalize dependent t. generalize dependent t'.
-    induction H9; intros; subst.
-    constructor 1. constructor 7 with L; auto. intros. 
-    apply red_rename_simpl_lab_ctx in H. unfold red_rename in H. apply H with z; auto.
-    assert (lab_term u). 
-
-    apply red_lab_regular'_simpl_lab_ctx in reg.
-    apply red_lab_regular'_trans in reg.
-(*     apply reg in H9_. *)
-(*     pose proof (H3 z H8). *)
-(*     apply H9_; auto. *)
-
-(*     pose proof (lab_close_var_spec z H0). *)
-(*     destruct H9 as [u0 [eq1 [H9 H10] ] ]. subst. *)
-(*     constructor 2 with (u0[[v]]). *)
-(*     apply IHtrans_closure1; auto. *)
-(*     apply IHtrans_closure2; auto. *)
-
-(*     inversion H9; subst. *)
-(*     constructor 5 with x; auto. *)
-(*     intros. *)
-(*     apply lab_term_open_rename with z; auto. *)
-
-(* Qed. *)
-Admitted.
-
-Lemma star_lab_closure_outer_lsub: forall R t t' v L, lab_term (t[[v]]) -> red_lab_regular' R -> (forall y : VarSet.elt, y \notin L -> star_closure (simpl_lab_contextual_closure R) (t ^ y) (t' ^ y)) -> red_rename R -> star_closure (simpl_lab_contextual_closure R) (t[[v]]) (t'[[v]]).
+(* FABRICIO *)
+Lemma star_lab_closure_outer_lsub: forall t t' v L, lab_term (t[[v]]) -> (forall y : VarSet.elt, y \notin L -> (t ^ y) =EE (t' ^ y)) -> (t[[v]]) =EE (t'[[v]]).
 Proof.
-    intros R t t' v L lab_term_tv reg. intros.
-    inversion lab_term_tv; subst.
-    pick_fresh z.
-    apply notin_union in Fr. destruct Fr.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    apply notin_union in H1. destruct H1.
-    pose proof (H z H1).
-    remember (t ^ z) as u.  remember (t' ^ z) as u'.
-    generalize dependent t. generalize dependent t'.
-    induction H9; intros; subst.
-    apply open_var_inj in Hequ; subst; auto. constructor 1; auto. 
-    constructor 2. apply trans_lab_closure_outer_lsub with L; auto. intros.
-    apply red_rename_trans with z; auto. apply red_rename_simpl_lab_ctx; auto.
+  intros; pick_fresh z;
+    apply notin_union in Fr; destruct Fr;
+      apply notin_union in H1; destruct H1;
+        apply notin_union in H1; destruct H1.
+  specialize (H0 _ H1); inversion H0; subst.
+  - assert (HH: t = t'). { admit.  } subst. (* trivial *)
+    apply reflexive_reduction.
+  - apply star_trans_reduction.
+    eapply trans_lab_closure_outer_lsub; eauto; intros.
+    lets HHH: red_rename_trans_lab_closure_eqcc; unfold red_rename in *.
+    apply HHH with (x := z); eauto.
+    Grab Existential Variables. exact L.
 Qed.
 
 (* -------------------------------------------------------------  EE clos *)
@@ -887,9 +1129,9 @@ Proof.
     split. apply star_lab_closure_app_right; auto.
     split*. constructor 3; auto.
     apply star_lab_closure_app_right; auto.
-
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_clos_abs: forall x x0 L, (lab_term (pterm_abs x0)) -> (forall y : VarSet.elt, y \notin L -> lab_lex (x0 ^ y) (x ^ y)) -> lab_lex (pterm_abs x0) (pterm_abs x).
 Proof.
     intros x x0 L lab_term_abs H.
@@ -903,13 +1145,13 @@ Proof.
     destruct H4.  destruct H4.  destruct H4.  destruct H5.
     pose proof H4;  apply (term_EE_open_fv ) in H4; auto.
     pose proof H6;  apply star_ctx_eqcc_sym in H6;  apply (term_EE_open_fv ) in H6; auto.
-    destruct H4 as [ x3 [ eq  z_fv_x3  ] ]; subst. 
-    destruct H6 as [ x1 [ eq  z_fv_x1  ] ]; subst. 
+    destruct H4 as [ x3 [ eq  z_fv_x3  ] ]; subst.
+    destruct H6 as [ x1 [ eq  z_fv_x1  ] ]; subst.
     exists (pterm_abs x3) (pterm_abs x1).
     split. apply star_lab_closure_abs with (L := L); auto.
     intros. apply red_rename_EE with z; auto.
-    exact red_rename_eqcc.
-    exact red_lab_regular'_eqcc.
+    (* exact red_rename_eqcc. *)
+    (* exact red_lab_regular'_eqcc. *)
     split. constructor 4 with (L \u fv(x3) \u fv(x1)). intros.
     (*apply red_rename_lab_ctx in rename_R.*)
     apply notin_union in H4. destruct H4.
@@ -918,19 +1160,19 @@ Proof.
     unfold red_rename in H9. apply H10 with z; auto.
 
     apply star_lab_closure_abs with L.
-    intros.  apply red_rename_EE with z; auto. exact red_rename_eqcc.
+    intros.  apply red_rename_EE with z; auto. (* exact red_rename_eqcc. *)
     apply red_lab_regular'_ctx_lab_sys_lx in H5.
     constructor 3 with L; intros.
     apply lab_term_open_rename with z.
     rewrite <- H5. apply EE_lab_term with (x0 ^ z).
     apply trm; auto. auto.
-    exact red_lab_regular'_eqcc.
+    (* exact red_lab_regular'_eqcc. *)
     apply red_lab_regular'_ctx_lab_sys_lx in H5.
     apply H5.  apply EE_lab_term with (x0 ^ z); auto.
     apply EE_lab_term with (x0 ^ z); auto.
-    
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_clos_outer_sub: forall t t' u L, lab_term (t[u]) -> (forall y : VarSet.elt, y \notin L -> lab_lex (t ^ y) (t' ^ y)) -> lab_lex (t[u]) (t'[u]).
 Proof.
     intros x x0 u L lab_term_tu H.
@@ -944,15 +1186,13 @@ Proof.
     destruct H7.  destruct H7.  destruct H7.  destruct H8.
     pose proof H7;  apply (term_EE_open_fv ) in H7; auto.
     pose proof H9;  apply star_ctx_eqcc_sym in H9;  apply (term_EE_open_fv ) in H9; auto.
-    destruct H7 as [ x3 [ eq  z_fv_x3  ] ]; subst. 
-    destruct H9 as [ x1 [ eq  z_fv_x1  ] ]; subst. 
+    destruct H7 as [ x3 [ eq  z_fv_x3  ] ]; subst.
+    destruct H9 as [ x1 [ eq  z_fv_x1  ] ]; subst.
     exists (x3[u]) (x1[u]).
-    split. 
+    split.
 
     apply star_lab_closure_outer_sub with (L := L); auto.
-    exact red_lab_regular'_eqcc.
     intros. apply red_rename_EE with z; auto.
-    exact red_rename_eqcc.
 
     split. constructor 5 with (L \u fv(x3) \u fv(x1)); auto. intros.
     apply notin_union in H7. destruct H7.
@@ -967,10 +1207,7 @@ Proof.
     rewrite <- H8.
     apply EE_lab_term with (x ^ z); auto.
 
-    exact red_lab_regular'_eqcc.
-    intros. apply red_rename_EE with z; auto. 
-    exact red_rename_eqcc.
-
+    intros. apply red_rename_EE with z; auto.
 
     apply red_lab_regular'_ctx_lab_sys_lx in H8.
     rewrite <- H8. apply EE_lab_term with (x ^ z).
@@ -979,12 +1216,13 @@ Proof.
     apply H2; auto. auto.
 Qed.
 
+
 Lemma EE_clos_inner_sub: forall R t u u', lab_body t -> (lab_EE_ctx_red R) (u) (u') -> (lab_EE_ctx_red R) (t[u]) (t[u']).
 Proof.
     intros.
     destruct H0.  destruct H0.  destruct H0.  destruct H1.
     exists (t[x]) (t[x0]).
-    split. 
+    split.
     apply star_lab_closure_inner_sub; auto.
     split*. constructor 6; auto.
     apply star_lab_closure_inner_sub; auto.
@@ -1003,15 +1241,15 @@ Proof.
     destruct H8.  destruct H8.  destruct H8.  destruct H9.
     pose proof H8;  apply (term_EE_open_fv ) in H8; auto.
     pose proof H10;  apply star_ctx_eqcc_sym in H10;  apply (term_EE_open_fv ) in H10; auto.
-    destruct H8 as [ x3 [ eq  z_fv_x3  ] ]; subst. 
-    destruct H10 as [ x1 [ eq  z_fv_x1  ] ]; subst. 
+    destruct H8 as [ x3 [ eq  z_fv_x3  ] ]; subst.
+    destruct H10 as [ x1 [ eq  z_fv_x1  ] ]; subst.
     exists (x3[[u]]) (x1[[u]]).
-    split. 
+    split.
 
-    apply star_lab_closure_outer_lsub with (L := L); auto.
-    exact red_lab_regular'_eqcc.
+    apply star_lab_closure_outer_lsub with (L := L). auto.
+    (* exact red_lab_regular'_eqcc. *)
     intros. apply red_rename_EE with z; auto.
-    exact red_rename_eqcc.
+    (* exact red_rename_eqcc. *)
 
     split. constructor 7 with (L \u fv(x3) \u fv(x1)); auto. intros.
     apply notin_union in H8. destruct H8.
@@ -1025,9 +1263,9 @@ Proof.
     apply lab_term_open_rename with z; auto.
     rewrite <- H9.
     apply EE_lab_term with (x ^ z); auto.
-    exact red_lab_regular'_eqcc.
+    (* exact red_lab_regular'_eqcc. *)
     intros. apply red_rename_EE with z; auto.
-    exact red_rename_eqcc.
+    (* exact red_rename_eqcc. *)
 
     apply red_lab_regular'_ctx_lab_sys_lx in H9.
     rewrite <- H9. apply EE_lab_term with (x ^ z).
@@ -1035,7 +1273,6 @@ Proof.
     apply EE_lab_term with (x ^ z).
     apply H2; auto. auto.
 Qed.
-
 
 (* -------------------------------------------------------------  EE ext_clos *)
 
@@ -1067,6 +1304,7 @@ Proof.
 
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_ext_clos_abs: forall R x x0 L, red_rename R -> red_lab_regular' R -> lab_term (pterm_abs x0) -> (forall y : VarSet.elt, y \notin L -> (ext_lab_EE_ctx_red R) (x0 ^ y) (x ^ y)) -> (ext_lab_EE_ctx_red R) (pterm_abs x0) (pterm_abs x).
 Proof.
     intros R x x0 L rename_R reg_R term_abs H.
@@ -1080,12 +1318,12 @@ Proof.
     destruct H5.  destruct H5.  destruct H5.  destruct H6.
     pose proof H5;  apply (term_EE_open_fv ) in H5; auto.
     pose proof H7;  apply star_ctx_eqcc_sym in H7;  apply (term_EE_open_fv ) in H7; auto.
-    destruct H5 as [ x3 [ eq  z_fv_x3  ] ]; subst. 
-    destruct H7 as [ x1 [ eq  z_fv_x1  ] ]; subst. 
+    destruct H5 as [ x3 [ eq  z_fv_x3  ] ]; subst.
+    destruct H7 as [ x1 [ eq  z_fv_x1  ] ]; subst.
     exists (pterm_abs x3) (pterm_abs x1).
     split. apply star_lab_closure_abs with (L := L); auto.
     intros. apply red_rename_EE with z; auto.
-    exact red_rename_eqcc. exact red_lab_regular'_eqcc.
+    (* exact red_rename_eqcc. exact red_lab_regular'_eqcc. *)
     split. constructor 4 with (L \u fv(x3) \u fv(x1)). intros.
     apply red_rename_ext_lab_ctx in rename_R.
     apply notin_union in H5. destruct H5.
@@ -1093,15 +1331,15 @@ Proof.
     unfold red_rename in rename_R. apply rename_R with z; auto.
 
     apply star_lab_closure_abs with L.
-    intros.  apply red_rename_EE with z; auto. exact red_rename_eqcc.
+    intros.  apply red_rename_EE with z; auto. (* exact red_rename_eqcc. *)
 
     apply red_lab_regular'_ext_lab_ctx in reg_R.
-    unfold red_lab_regular' in reg_R. apply reg_R in H6. 
+    unfold red_lab_regular' in reg_R. apply reg_R in H6.
     constructor 3 with L. intros.
     apply lab_term_open_rename with z.
     rewrite <- H6. apply EE_lab_term with (x0 ^ z).
     apply H1; auto. auto.
-    exact red_lab_regular'_eqcc.
+    (* exact red_lab_regular'_eqcc. *)
     apply red_lab_regular'_ext_lab_ctx in reg_R.
     apply reg_R in H6.
     rewrite <- H6. apply EE_lab_term with (x0 ^ z).
@@ -1110,6 +1348,7 @@ Proof.
     apply EE_lab_term with (x0 ^ z); auto.
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_ext_clos_outer_sub: forall R t t' u L, lab_term (t[u]) -> red_rename R -> red_lab_regular' R -> (forall y : VarSet.elt, y \notin L -> (ext_lab_EE_ctx_red R) (t ^ y) (t' ^ y)) -> (ext_lab_EE_ctx_red R) (t[u]) (t'[u]).
 Proof.
     intros R x x0 u L lab_term_tu rename_R reg_R H.
@@ -1124,14 +1363,14 @@ Proof.
     destruct H7.  destruct H7.  destruct H7.  destruct H8.
     pose proof H7;  apply (term_EE_open_fv ) in H7; auto.
     pose proof H9;  apply star_ctx_eqcc_sym in H9;  apply (term_EE_open_fv ) in H9; auto.
-    destruct H7 as [ x3 [ eq  z_fv_x3  ] ]; subst. 
-    destruct H9 as [ x1 [ eq  z_fv_x1  ] ]; subst. 
+    destruct H7 as [ x3 [ eq  z_fv_x3  ] ]; subst.
+    destruct H9 as [ x1 [ eq  z_fv_x1  ] ]; subst.
     exists (x3[u]) (x1[u]).
-    split. 
+    split.
 
     apply star_lab_closure_outer_sub with (L := L); auto.
-    intros. exact red_lab_regular'_eqcc. 
-    intros.  apply red_rename_EE with z; auto. exact red_rename_eqcc.
+    intros. (* exact red_lab_regular'_eqcc.  *)
+    intros.  apply red_rename_EE with z; auto. (* exact red_rename_eqcc. *)
 
     split. constructor 5 with (L \u fv(x3) \u fv(x1)); auto. intros.
     apply red_rename_ext_lab_ctx in rename_R.
@@ -1146,13 +1385,13 @@ Proof.
     apply reg_R in H8.
 
     rewrite <- H8. apply EE_lab_term with (x ^ z).
-    apply H2; auto. auto. exact red_lab_regular'_eqcc.
+    apply H2; auto. auto. (* exact red_lab_regular'_eqcc. *)
 
-    intros. apply red_rename_EE with z; auto. exact red_rename_eqcc.
+    intros. apply red_rename_EE with z; auto. (* exact red_rename_eqcc. *)
 
 
     apply red_lab_regular'_ext_lab_ctx in reg_R.
-    unfold red_lab_regular' in reg_R. apply reg_R in H8. 
+    unfold red_lab_regular' in reg_R. apply reg_R in H8.
     rewrite <- H8. apply EE_lab_term with (x ^ z).
     apply H2; auto. auto.
 
@@ -1160,17 +1399,19 @@ Proof.
     apply H2; auto. auto.
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_ext_clos_inner_sub: forall R t u u', lab_body t -> (ext_lab_EE_ctx_red R) (u) (u') -> (ext_lab_EE_ctx_red R) (t[u]) (t[u']).
 Proof.
     intros.
     destruct H0.  destruct H0.  destruct H0.  destruct H1.
     exists (t[x]) (t[x0]).
-    split. 
+    split.
     apply star_lab_closure_inner_sub; auto.
     split*. constructor 6; auto.
     apply star_lab_closure_inner_sub; auto.
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_ext_clos_outer_lsub: forall R t t' u L, lab_term (t[[u]]) -> (*SN R u ->*) red_rename R -> red_lab_regular' R -> (forall y : VarSet.elt, y \notin L -> (ext_lab_EE_ctx_red R) (t ^ y) (t' ^ y)) -> (ext_lab_EE_ctx_red R) (t[[u]]) (t'[[u]]).
 Proof.
     intros R x x0 u L lab_term_tu rename_R reg_R H.
@@ -1184,15 +1425,15 @@ Proof.
     destruct H8.  destruct H8.  destruct H8.  destruct H9.
     pose proof H8;  apply (term_EE_open_fv ) in H8; auto.
     pose proof H10;  apply star_ctx_eqcc_sym in H10;  apply (term_EE_open_fv ) in H10; auto.
-    destruct H8 as [ x3 [ eq  z_fv_x3  ] ]; subst. 
-    destruct H10 as [ x1 [ eq  z_fv_x1  ] ]; subst. 
+    destruct H8 as [ x3 [ eq  z_fv_x3  ] ]; subst.
+    destruct H10 as [ x1 [ eq  z_fv_x1  ] ]; subst.
     exists (x3[[u]]) (x1[[u]]).
-    split. 
+    split.
 
     apply star_lab_closure_outer_lsub with (L := L); auto.
-    intros. exact red_lab_regular'_eqcc.
+    intros. (* exact red_lab_regular'_eqcc. *)
     intros. apply red_rename_EE with z; auto.
-    exact red_rename_eqcc.
+    (* exact red_rename_eqcc. *)
 
     split. constructor 7 with (L \u fv(x3) \u fv(x1)); auto. intros.
     apply red_rename_ext_lab_ctx in rename_R.
@@ -1206,23 +1447,23 @@ Proof.
     apply red_lab_regular'_ext_lab_ctx in reg_R.
     apply reg_R in H9.
     rewrite <- H9. apply EE_lab_term with (x ^ z).
-    apply H2; auto. auto. exact red_lab_regular'_eqcc.
+    apply H2; auto. auto. (* exact red_lab_regular'_eqcc. *)
 
-    intros. apply red_rename_EE with z; auto. exact red_rename_eqcc.
+    intros. apply red_rename_EE with z; auto. (* exact red_rename_eqcc. *)
 
     apply red_lab_regular'_ext_lab_ctx in reg_R.
     apply reg_R in H9.
     rewrite <- H9. apply EE_lab_term with (x ^ z).
-    apply H2; auto. auto. 
+    apply H2; auto. auto.
 
     apply EE_lab_term with (x ^ z).
-    apply H2; auto. auto. 
+    apply H2; auto. auto.
 Qed.
 
 (* ------------------- *)
 
 
-
+(* FABRICIO: VERIFICADO *)
 Lemma lab_sys_lx_term_is_sys_Bx : forall t t', term t -> lab_sys_lx t t' -> sys_Bx t t'.
 Proof.
     intros.
@@ -1234,7 +1475,7 @@ Proof.
 
 
 (* ------------------------------------------------------------  EE presv reductions *)
-
+(* FABRICIO: VERIFICADO *)
 Lemma EE_presv_ie: forall t t' u u', t =EE u -> u' =EE t' -> ((u -->[lx_i] u' \/ u -->[lx_e] u') -> (t -->[lx_i] t' \/ t -->[lx_e] t')).
 Proof.
     intros.
@@ -1258,6 +1499,7 @@ Proof.
     apply star_closure_composition with u'; auto.
 Qed.
 
+(* FABRICIO: VERIFICADO *)
 Lemma EE_presv_lab_lex: forall t t' u u', t =EE u -> u' =EE t' -> ((u -->[lex] u') -> (t -->[lex] t')).
 Proof.
     intros.
@@ -1286,30 +1528,30 @@ Proof.
     (* app_left *)
     apply EE_presv_ie with (u := (pterm_app t u)) (u' := (pterm_app t' u)); auto.
     assert  (t-->[lx_i]t' \/ t-->[lx_e]t').
-    apply IHlab_contextual_closure; auto. constructor 1; auto. 
+    apply IHlab_contextual_closure; auto. constructor 1; auto.
     pose proof (EE_lab_term H0 H3); auto. inversion H4; subst; auto.
     constructor 1; auto.
-    destruct H4. 
-    left. apply EE_ext_clos_app_left. 
+    destruct H4.
+    left. apply EE_ext_clos_app_left.
     pose proof (EE_lab_term H0 H3); auto.  auto.
-    right. apply EE_ext_clos_app_left. 
+    right. apply EE_ext_clos_app_left.
     pose proof (EE_lab_term H0 H3); auto.  auto.
 
     (* app_right *)
     apply EE_presv_ie with (u := (pterm_app t u)) (u' := (pterm_app t u')); auto.
     assert  (u-->[lx_i]u' \/ u-->[lx_e]u').
-    apply IHlab_contextual_closure; auto. constructor 1; auto. 
+    apply IHlab_contextual_closure; auto. constructor 1; auto.
     pose proof (EE_lab_term H0 H3); auto. inversion H4; subst; auto.
     constructor 1; auto.
-    destruct H4. 
-    left. apply EE_ext_clos_app_right. 
+    destruct H4.
+    left. apply EE_ext_clos_app_right.
     pose proof (EE_lab_term H0 H3); auto.  auto.
-    right. apply EE_ext_clos_app_right. 
+    right. apply EE_ext_clos_app_right.
     pose proof (EE_lab_term H0 H3); auto.  auto.
 
     (* abs *)
     apply EE_presv_ie with (u := pterm_abs t) (u' := pterm_abs t'); auto.
-    pose proof (EE_lab_term H1 H3); auto. inversion H4; subst; auto. 
+    pose proof (EE_lab_term H1 H3); auto. inversion H4; subst; auto.
     pick_fresh z.
     assert  (t^z-->[lx_i]t'^z \/ t^z-->[lx_e]t'^z).
     apply H0 with z; auto. constructor 1; auto. 
@@ -1387,9 +1629,6 @@ Proof.
     apply EE_lab_term with t0; auto.
     exact red_rename_sys_Bx. exact red_lab_regular'_sys_Bx.
     intros. pose proof red_rename_lab_xe_eq. apply H18 with z; auto.
-
-
-
     (* inner lsub *)
     left. exists (t [[u]]) (t [[u']]). split. auto.
     split*. 
